@@ -1,0 +1,11 @@
+# Ignore node modules and environment files
+node_modules/
+.env
+
+# Optional: other common ignores
+*.log
+__pycache__/
+*.pyc
+.vscode/
+dist/
+build/
