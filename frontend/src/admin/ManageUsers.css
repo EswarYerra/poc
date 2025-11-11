@@ -1,0 +1,260 @@
+/* ===================== MANAGE USERS PAGE ===================== */
+
+.manage-users-container {
+  padding: 30px;
+  background: #f9fafc;
+  min-height: 100vh;
+  font-family: "Lato", sans-serif;
+}
+
+/* ---------- Page Header ---------- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.page-header h2 {
+  font-size: 22px;
+  color: #0f172a;
+  margin: 0;
+}
+
+.page-header p {
+  color: #475569;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* ---------- Header Buttons ---------- */
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.header-actions button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s ease;
+  font-family: "Lato", sans-serif;
+}
+
+/* ✅ Export Button - White / Gray */
+.header-actions .export-btn {
+  background-color: white !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.header-actions .export-btn:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* ✅ Add User Button - Dark Blue */
+.header-actions .add-btn {
+  background-color: #112c61 !important;
+  color: white !important;
+}
+
+.header-actions .add-btn:hover {
+  background-color: #0d1e49 !important;
+}
+
+/* ---------- Filter Bar ---------- */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.search-box,
+.filter-select {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+  font-family: "Lato", sans-serif;
+}
+
+/* ---------- Users Table ---------- */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  font-family: "Lato", sans-serif;
+}
+
+.users-table th {
+  background: #0f172a;
+  color: white;
+  text-align: left;
+  padding: 12px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.users-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.users-table tr:hover {
+  background: #f1f5f9;
+  transition: 0.2s;
+}
+
+/* ---------- Role Badges ---------- */
+
+.role-badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: white;
+  text-transform: capitalize;
+}
+
+/* ✅ User -> Blue */
+.role-badge.user,
+.role-badge.User {
+  background: #1e3a8a !important;
+  color: white !important;
+}
+
+/* ✅ Admin -> Orange */
+.role-badge.admin,
+.role-badge.Admin {
+  background: #f97316 !important;
+  color: white !important;
+}
+
+/* ---------- Status Badges ---------- */
+
+.status-badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: capitalize;
+}
+
+/* ✅ Active -> Green */
+.status-badge.active,
+.status-badge.Active {
+  background: #2ce485 !important;
+  color: #0b351b !important;
+}
+
+/* ✅ Inactive -> Reddish Yellow */
+.status-badge.inactive,
+.status-badge.Inactive {
+  background: #fedc65 !important;
+  color: #8a4b07 !important;
+}
+
+/* ---------- Action Buttons ---------- */
+.action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.action-btn.edit:hover {
+  background: #dbeafe;
+}
+
+.action-btn.delete:hover {
+  background: #fee2e2;
+}
+
+.action-btn.edit svg {
+  color: #2563eb;
+}
+
+.action-btn.delete svg {
+  color: #ef4444;
+}
+
+/* ---------- Pagination ---------- */
+.pagination-controls {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  font-family: "Lato", sans-serif;
+}
+
+.pagination-controls button {
+  padding: 6px 12px;
+  border: none;
+  background: #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background: #cbd5e1;
+}
+
+.pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------- Delete Modal ---------- */
+.confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirm-box {
+  background: white;
+  padding: 20px;
+  width: 350px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-gray {
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}

@@ -1,0 +1,130 @@
+:root {
+  --orange: #1f2796;
+  --blue: #007bff;
+  --green: #27ae60;
+  --bg-light: #f8f9fa;
+  --text-dark: #222;
+  --text-gray: #666;
+}
+
+.admin-dashboard-container {
+  padding: 2rem;
+  background: var(--bg-light);
+  color: var(--text-dark);
+  min-height: 100vh;
+  font-family: "Lato", sans-serif;
+}
+
+/* ---------- Welcome Section ---------- */
+.welcome-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.welcome-text {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--orange);
+}
+
+.subtitle {
+  color: var(--text-gray);
+}
+
+/* ---------- Stats Section ---------- */
+.stats-section {
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.stat-info h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.stat-info p {
+  color: var(--text-gray);
+  font-size: 0.9rem;
+}
+
+.badge {
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.badge.orange {
+  background: var(--orange);
+}
+
+.badge.blue {
+  background: var(--blue);
+}
+
+.badge.green {
+  background: var(--green);
+}
+
+
+
+/* ---------- Responsiveness ---------- */
+@media (max-width: 900px) {
+  .welcome-text {
+    font-size: 1.6rem;
+  }
+  .stats-cards {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-dashboard-container {
+    padding: 1rem;
+  }
+  .stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .badge {
+    margin-top: 0.5rem;
+  }
+  .recent-row {
+    grid-template-columns: 1fr;
+    text-align: left;
+    gap: 0.4rem;
+  }
+  .user-date {
+    text-align: left;
+  }
+}

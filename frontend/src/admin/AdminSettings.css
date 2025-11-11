@@ -1,0 +1,142 @@
+/* ==============================
+   AdminSettings.css
+   ============================== */
+
+.settings-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background: #ffffffcc;
+  padding: 32px 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(9, 30, 66, 0.12);
+}
+
+.settings-header {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0b2349;
+  margin-bottom: 28px;
+}
+
+.settings-form label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #0b2349;
+}
+
+.settings-form input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #cdd5e0;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 0.95rem;
+}
+
+.settings-form button {
+  background: #007bff;
+  border: none;
+  color: white;
+  padding: 10px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.settings-form button:hover {
+  background: #0064d1;
+}
+/* --- Recent Section --- */
+.recent-section {
+  margin-top: 40px;
+}
+
+.recent-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0b2349;
+  margin-bottom: 18px;
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recent-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.recent-item h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0b2349;
+  margin-bottom: 4px;
+}
+
+.recent-item p {
+  font-size: 0.9rem;
+  color: #6b7a8c;
+  margin: 0;
+}
+
+.recent-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recent-status .active {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.recent-status .date {
+  font-size: 0.85rem;
+  color: #6b7a8c;
+}
+
+.recent-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.add-demo,
+.view-all {
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-demo {
+  background: #f4f8ff;
+  color: #0b2349;
+}
+
+.view-all {
+  background: #007bff;
+  color: white;
+}
+
+.add-demo:hover {
+  background: #e5edff;
+}
+
+.view-all:hover {
+  background: #0064d1;
+}

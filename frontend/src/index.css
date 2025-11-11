@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700;900&display=swap');
+
+/* =============== ROOT =============== */
+:root {
+  --primary-gradient-start: #ffffff;
+  --primary-gradient-end: #1a75ff;
+
+  font-family: "Lato", sans-serif;
+  color: #2A2A2A;
+
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Apply Lato everywhere */
+body, button, input, select, textarea, table, th, td, p, a, span, div, label,
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Lato", sans-serif !important;
+}
+
+/* Reset */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Global gradient */
+html, body {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* DEFAULT — pages start at the top and scroll normally */
+body {
+  display: block;
+  min-width: 320px;
+}
+
+/* ✅ Only AUTH pages centered (we toggle this class in each auth page) */
+body.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Root container */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: block;
+}
+
+/* Buttons (don’t globally override page styles) */
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+button:focus-visible {
+  outline: 3px solid #1a75ff;
+  outline-offset: 2px;
+}
+/* ✅ Only CENTER login + register + forgot + otp pages */
+.auth-screen {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

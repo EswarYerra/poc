@@ -1,0 +1,41 @@
+/* ==============================
+   Reports.css
+   ============================== */
+
+.reports-container {
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
+  background: #ffffffcc;
+  border-radius: 18px;
+  padding: 30px 38px;
+  box-shadow: 0 10px 26px rgba(9, 30, 66, 0.12);
+}
+
+.reports-header {
+  text-align: center;
+  color: #0b2349;
+  font-weight: 800;
+  font-size: 1.8rem;
+  margin-bottom: 24px;
+}
+
+.report-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 18px rgba(9, 30, 66, 0.08);
+}
+
+.report-card h4 {
+  color: #0b2349;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.report-card p {
+  color: #6b7a8c;
+  font-size: 0.95rem;
+  margin-top: 8px;
+}

@@ -1,0 +1,133 @@
+/* ---------- Root Colors ---------- */
+:root {
+  --primary: #003691;
+  --secondary: #ffffff;
+  --text: #000000;
+  --error: #ff4d4d;
+  --success: #27ae60;
+  font-family: "Lato", system-ui, sans-serif;
+}
+
+/* ---------- Container ---------- */
+.register-container {
+  width: 420px;
+  max-width: 95%;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px 35px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  backdrop-filter: blur(10px);
+  transform: translateY(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 60px auto; /* top-bottom spacing */
+}
+
+.register-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Title & Subtitle ---------- */
+.register-container h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #003691;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 15px;
+  margin-bottom: 25px;
+}
+
+/* ---------- Form Styles ---------- */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+input {
+  padding: 12px;
+  font-size: 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  color: #000;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26, 117, 255, 0.1);
+  background-color: #ffffff;
+}
+
+/* ---------- Primary Blue Button ---------- */
+/* ---------- Create Account Button (Matches Login Button Style) ---------- */
+.register-container button {
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff !important;
+  background: linear-gradient(135deg, #1a75ff, #003691) !important;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.register-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Messages ---------- */
+.error {
+  color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.success {
+  color: #27ae60;
+  background: rgba(39, 174, 96, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* ---------- Redirect Text ---------- */
+.redirect {
+  margin-top: 20px;
+  font-size: 15px;
+  color: #2A2A2A;
+}
+
+.login-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.login-link:hover {
+  color: #003691;
+  text-decoration: underline;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+  .register-container {
+    padding: 30px 25px;
+  }
+
+  .register-container h2 {
+    font-size: 24px;
+  }
+}

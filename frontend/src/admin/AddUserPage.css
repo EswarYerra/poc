@@ -1,0 +1,181 @@
+/* ✅ PAGE CONTAINER */
+.add-user-page {
+  width: 90%;
+  max-width: 1000px;
+  margin: 50px auto;
+  background: #f9fbff;
+  border-radius: 16px;
+  padding: 35px;
+  font-family: "Lato", sans-serif;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ✅ HEADER */
+.add-user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #eaf2ff;
+  padding: 15px 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.add-user-header h2 {
+  color: #003691;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* ✅ CARD STYLING */
+.add-user-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px 35px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+}
+
+.add-user-card h3 {
+  color: #003691;
+  font-weight: 600;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e6f0;
+  padding-bottom: 8px;
+}
+
+/* ✅ GRID & LAYOUT FIX - NO OVERFLOW */
+.add-user-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.add-user-group {
+  flex: 1 1 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ✅ INPUT STYLE */
+.add-user-group input,
+.add-user-group select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+  background: #f9f9f9;
+  font-size: 15px;
+  transition: all 0.25s ease;
+}
+
+.add-user-group input:hover,
+.add-user-group select:hover {
+  background: #fff;
+  border-color: #b0b7c3;
+}
+
+.add-user-group input:focus,
+.add-user-group select:focus {
+  border-color: #0d6efd;
+  background: #fff;
+  outline: none;
+}
+
+/* ✅ PASSWORD FIELD ROW */
+.password-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ✅ Generate Password Button */
+.pass-btn {
+  background: #f97316;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.25s ease;
+}
+
+.pass-btn:hover {
+  background: #c2410c;
+  transform: translateY(-2px);
+}
+
+/* ✅ TOAST MESSAGE */
+.toast-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #1e40af;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: opacity 0.6s ease;
+  z-index: 9999;
+}
+
+.toast-message.error {
+  background: #dc2626;
+}
+
+/* ✅ BUTTONS */
+.save-btn,
+.cancel-btn {
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+/* ✅ Save button gradient like login */
+.save-btn {
+  background: linear-gradient(135deg, #1a75ff, #003691);
+  color: #fff;
+}
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ✅ Cancel button */
+.cancel-btn {
+  background: #6c757d;
+  color: #fff;
+}
+.cancel-btn:hover {
+  background: #565e64;
+  transform: translateY(-2px);
+}
+
+/* ✅ RESPONSIVE */
+@media (max-width: 768px) {
+  .add-user-page {
+    padding: 20px;
+  }
+
+  .password-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pass-btn {
+    width: 100%;
+  }
+
+  .save-btn,
+  .cancel-btn {
+    width: 100%;
+  }
+}

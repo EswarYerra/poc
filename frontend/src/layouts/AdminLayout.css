@@ -1,0 +1,248 @@
+/* ==============================
+   AdminLayout.css — FINAL NON-OVERLAPPING VERSION
+   ============================== */
+
+.admin-layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden; /* ensures no scrollbar from outer container */
+  background: #f4f6fa; /* solid light-gray background */
+}
+
+
+/* -------- Sidebar -------- */
+.admin-sidebar {
+  width: 240px;
+  background: #0b2349;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1200;
+  /* removed corner radius */
+}
+
+.sidebar-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 32px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #cfd8e3;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.3s ease;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.nav-link.active {
+  background: #1c3e72;
+  color: #fff;
+}
+
+/* -------- Main Wrapper -------- */
+.admin-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #f4f6fa;
+  margin-left: 240px; /* ✅ no overlap */
+  transition: margin-left 0.3s ease;
+}
+
+/* -------- Header -------- */
+.admin-header {
+  height: 80px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px; /* ✅ more breathing room on both sides */
+  border-bottom: 1px solid #e3e6eb;
+  position: fixed;
+  top: 0;
+  left: 240px; /* ✅ starts exactly after sidebar */
+  right: 2px;
+  z-index: 1100;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  transition: left 0.3s ease, width 0.3s ease;
+  box-sizing: border-box;
+}
+
+.header-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2f3a4d;
+  display: flex;
+  align-items: center;
+  padding-left: 10px; /* ✅ small space from left edge */
+}
+
+/* -------- Header Right -------- */
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.profile-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-box:hover {
+  background: #f3f6fb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #0b2349;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.profile-name {
+  font-weight: 600;
+  color: #0b2349;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #0b2349;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.profile-box:hover .logout-btn {
+  color: #f97316;
+}
+
+/* -------- Main Content -------- */
+.admin-content {
+  flex: 1;
+  margin-top: 100px; /* ✅ enough below header */
+  padding: 32px 48px; /* ✅ more padding from left-right */
+  overflow-y: auto;
+  background: #f6f7fb;
+  scrollbar-width: thin;
+  scrollbar-color: #0b2349 #e6eaf2;
+  height: calc(100vh - 100px);
+}
+
+.admin-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-content::-webkit-scrollbar-thumb {
+  background-color: #0b2349;
+  border-radius: 8px;
+}
+
+.admin-page-container {
+  min-height: calc(100vh - 100px);
+}
+
+/* -------- Responsive Design -------- */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 200px;
+    padding: 20px 16px;
+  }
+
+  .admin-main-wrapper {
+    margin-left: 200px;
+  }
+
+  .admin-header {
+    left: 200px;
+    padding: 0 24px;
+  }
+
+  .header-title {
+    font-size: 1rem;
+    padding-left: 6px;
+  }
+
+  .profile-box {
+    gap: 8px;
+    padding: 6px 10px;
+  }
+
+  .profile-name {
+    display: none;
+  }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-sidebar {
+    display: none;
+  }
+
+  .admin-main-wrapper {
+    margin-left: 0;
+  }
+
+  .admin-header {
+    left: 0;
+    width: 100%;
+    justify-content: space-between;
+    border-radius: 0;
+    padding: 0 20px;
+  }
+
+  .admin-content {
+    margin-top: 80px;
+    padding: 24px 20px;
+  }
+}
