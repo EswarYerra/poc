@@ -3,6 +3,26 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./EditProfilePage.css";
 
+// ✅ Universal fallback: fetch message from backend constants if DB doesn't have it
+const fetchBackendMessage = async (code, type) => {
+  try {
+    const cached = localStorage.getItem(`${type}_${code}`);
+    if (cached) return cached;
+
+    const res = await fetch(`http://127.0.0.1:8000/api/auth/messages/${type}/${code}/`);
+    if (res.ok) {
+      const data = await res.json();
+      const message = data?.message || "";
+      if (message) localStorage.setItem(`${type}_${code}`, message);
+      return message;
+    }
+  } catch (err) {
+    console.warn("⚠️ Could not fetch backend message:", code, type, err);
+  }
+  return "";
+};
+
+
 function EditProfilePage() {
   const [user, setUser] = useState({
     username: "",
@@ -46,29 +66,36 @@ function EditProfilePage() {
   const isAdminView = !!userId;
 
   // ---------- Helpers to read DB messages ----------
-  const getErrorText = (code) => {
-    if (!Array.isArray(tables.user_error)) return "";
-    const e = tables.user_error.find(
-      (x) => (x.error_code || "").toUpperCase() === (code || "").toUpperCase()
-    );
-    return e ? e.error_message : "";
-  };
+  // ✅ Message fetchers with backend fallback
+const getErrorText = async (code) => {
+  if (!Array.isArray(tables.user_error)) {
+    return await fetchBackendMessage(code, "error");
+  }
+  const e = tables.user_error.find(
+    (x) => (x.error_code || "").toUpperCase() === (code || "").toUpperCase()
+  );
+  return e?.error_message || (await fetchBackendMessage(code, "error"));
+};
 
-  const getValidationText = (code) => {
-    if (!Array.isArray(tables.user_validation)) return "";
-    const v = tables.user_validation.find(
-      (x) => (x.validation_code || "").toUpperCase() === (code || "").toUpperCase()
-    );
-    return v ? v.validation_message : "";
-  };
+const getValidationText = async (code) => {
+  if (!Array.isArray(tables.user_validation)) {
+    return await fetchBackendMessage(code, "validation");
+  }
+  const v = tables.user_validation.find(
+    (x) => (x.validation_code || "").toUpperCase() === (code || "").toUpperCase()
+  );
+  return v?.validation_message || (await fetchBackendMessage(code, "validation"));
+};
 
-  const getInfoText = (code) => {
-    if (!Array.isArray(tables.user_information)) return "";
-    const i = tables.user_information.find(
-      (x) => (x.information_code || "").toUpperCase() === (code || "").toUpperCase()
-    );
-    return i ? i.information_text : "";
-  };
+const getInfoText = async (code) => {
+  if (!Array.isArray(tables.user_information)) {
+    return await fetchBackendMessage(code, "information");
+  }
+  const i = tables.user_information.find(
+    (x) => (x.information_code || "").toUpperCase() === (code || "").toUpperCase()
+  );
+  return i?.information_text || (await fetchBackendMessage(code, "information"));
+};
 
   // ---------- Load message tables (cached or backend) ----------
   useEffect(() => {
@@ -212,56 +239,67 @@ function EditProfilePage() {
   const ALNUM_SPACE_HYPHEN = /^[A-Za-z0-9\s-]+$/;
   const ALNUM_ONLY = /^[A-Za-z0-9]+$/;
 
-  const validatePersonalField = (name, val) => {
-    let msg = "";
-    const v = String(val || "").trim();
+  const validatePersonalField = async (name, val) => {
+  let msg = "";
+  const v = String(val || "").trim();
 
-    if (!v) {
-      msg = getValidationText("VA002") || "This field is required.";
-    } else if ((name === "first_name" || name === "last_name") && !NAME_RE.test(v)) {
-      msg = getValidationText("VA001") || "Only letters and spaces allowed.";
-    } else if (name === "username" && !USERNAME_RE.test(v)) {
-      msg = "Username may contain letters, numbers and underscores only.";
-    } else if (name === "email" && !EMAIL_RE.test(v)) {
-      msg = getValidationText("VA005") || "Invalid email format.";
-    } else if (name === "phone" && !PHONE_RE.test(v)) {
-      msg = getValidationText("VA007") || "Phone number must contain 10 digits.";
-    }
+  if (!v) {
+    msg = await getValidationText("VA002");
+  } else if ((name === "first_name" || name === "last_name") && !NAME_RE.test(v)) {
+    msg = await getValidationText("VA001");
+  } else if (name === "username" && !USERNAME_RE.test(v)) {
+    msg = await getValidationText("VA003");
+  } else if (name === "email" && !EMAIL_RE.test(v)) {
+    msg = await getValidationText("VA005");
+  } else if (name === "phone" && !PHONE_RE.test(v)) {
+    msg = await getValidationText("VA007");
+  }
 
-    setErrors((p) => ({ ...p, [name]: msg }));
-    return !msg;
-  };
+  setErrors((p) => ({ ...p, [name]: msg }));
+  return !msg;
+};
 
-  const validateAddressField = (name, val) => {
-    let msg = "";
-    const v = String(val || "");
 
-    if (name === "landmark") {
-      if (v && !ALNUM_SPACE_HYPHEN.test(v)) msg = getErrorText("EA003") || "Invalid characters.";
-    } else if (name === "postal_code") {
-      if (!v.trim()) msg = getErrorText("EA008") || "Pin code required.";
-      else if (!ALNUM_ONLY.test(v)) msg = getErrorText("EA005") || "Pin code must be alphanumeric.";
-      else if (v.length < 4 || v.length > 10) msg = getErrorText("EA006") || "Invalid pin code.";
-    } else {
-      if (!v.trim()) msg = getErrorText("EA004") || "This field is required.";
-      else if (!ALNUM_SPACE_HYPHEN.test(v)) msg = getErrorText("EA003") || "Only letters, numbers, and spaces allowed.";
-    }
+  const validateAddressField = async (name, val) => {
+  let msg = "";
+  const v = String(val || "");
 
-    setErrors((p) => ({ ...p, [name]: msg }));
-    return !msg;
-  };
+  if (name === "landmark") {
+    if (v && !ALNUM_SPACE_HYPHEN.test(v)) msg = await getErrorText("EA003");
+  } else if (name === "postal_code") {
+    if (!v.trim()) msg = await getErrorText("EA008");
+    else if (!ALNUM_ONLY.test(v)) msg = await getErrorText("EA005");
+    else if (v.length < 4 || v.length > 10) msg = await getErrorText("EA006");
+  } else {
+    if (!v.trim()) msg = await getErrorText("EA004");
+    else if (!ALNUM_SPACE_HYPHEN.test(v)) msg = await getErrorText("EA003");
+  }
+
+  setErrors((p) => ({ ...p, [name]: msg }));
+  return !msg;
+};
+
 
   // ---------- Postal lookup ----------
-  const lookupPostalCode = async (postalCodeValue, countryValue) => {
+const lookupPostalCode = (postalCodeValue, countryValue) => {
+  (async () => {
     try {
       setLoadingPinLookup(true);
-      if (!postalCodeValue || postalCodeValue.length < 4) return;
 
+      // 🧠 Case 1: too short or empty postal code
+      if (!postalCodeValue || postalCodeValue.length < 4) {
+        const msg = await getErrorText("EA006");
+        setErrors((p) => ({ ...p, postal_code: msg }));
+        return;
+      }
+
+      // 🇮🇳 Case 2: Try India Post API first
       if ((countryValue || "India") === "India") {
         const indiaRes = await fetch(`https://api.postalpincode.in/pincode/${postalCodeValue}`);
         const indiaData = await indiaRes.json();
-        if (indiaData[0]?.Status === "Success") {
-          const info = indiaData[0].PostOffice?.[0];
+
+        if (Array.isArray(indiaData) && indiaData[0]?.Status === "Success") {
+          const info = indiaData[0]?.PostOffice?.[0];
           if (info) {
             setAddress((prev) => ({
               ...prev,
@@ -276,72 +314,81 @@ function EditProfilePage() {
         }
       }
 
-      // fallback: zippopotamus
+      // 🌍 Case 3: Fallback to Zippopotam.us API
       const res = await fetch(`https://api.zippopotam.us/${(countryValue || "us").toLowerCase()}/${postalCodeValue}`);
-      if (res.ok) {
-        const data = await res.json();
-        const place = data.places?.[0];
-        if (place) {
-          setAddress((prev) => ({
-            ...prev,
-            city: place["place name"] || prev.city,
-            state: place["state"] || prev.state,
-            country: data["country"] || prev.country,
-          }));
-          setErrors((p) => ({ ...p, postal_code: "" }));
-        } else {
-          setErrors((p) => ({ ...p, postal_code: getErrorText("EA006") || "Invalid pin code." }));
-        }
+
+      if (!res.ok) {
+        // 404 or network issue — invalid pin
+        const msg = await getErrorText("EA007");
+        setErrors((p) => ({ ...p, postal_code: msg }));
+        return;
+      }
+
+      const data = await res.json();
+      const place = data.places?.[0];
+
+      if (place) {
+        // ✅ valid pin found
+        setAddress((prev) => ({
+          ...prev,
+          city: place["place name"] || prev.city,
+          state: place["state"] || prev.state,
+          country: data["country"] || prev.country,
+        }));
+        setErrors((p) => ({ ...p, postal_code: "" }));
       } else {
-        setErrors((p) => ({ ...p, postal_code: getErrorText("EA007") || "Invalid pin code." }));
+        // ❌ pin code not recognized even after success
+        const msg = await getErrorText("EA006");
+        setErrors((p) => ({ ...p, postal_code: msg }));
       }
     } catch (err) {
       console.error("Postal lookup failed:", err);
+      const msg = await getErrorText("EA007");
+      setErrors((p) => ({ ...p, postal_code: msg }));
     } finally {
       setLoadingPinLookup(false);
     }
-  };
+  })();
+};
 
   // ---------- Handlers ----------
-  const handleChangeUser = (e) => {
+  const handleChangeUser = async (e) => {
     const { name, value } = e.target;
     setUser((prev) => ({ ...prev, [name]: value }));
     if (["first_name", "last_name", "username", "email", "phone"].includes(name)) {
-      validatePersonalField(name, value);
+      await validatePersonalField(name, value);
+      
     }
   };
 
-  const handleChangeAddress = (e) => {
+  const handleChangeAddress = async  (e) => {
     const { name, value } = e.target;
     setAddress((prev) => ({ ...prev, [name]: value }));
     if (name === "postal_code") {
-      validateAddressField(name, value);
+      await validateAddressField(name, value);
       if (value.length >= 5) lookupPostalCode(value, address.country);
     } else {
-      validateAddressField(name, value);
+      await validateAddressField(name, value);
     }
   };
 
-  const validateAll = () => {
-    const personalFields = ["username", "first_name", "last_name", "phone", "email"];
-    const addrFields = ["house_flat", "street", "area", "district", "city", "state", "postal_code", "country"];
+  const validateAll = async () => {
+  const personalFields = ["username", "first_name", "last_name", "phone", "email"];
+  const addrFields = ["house_flat", "street", "area", "district", "city", "state", "postal_code", "country"];
 
-    let ok = true;
-    personalFields.forEach((f) => {
-      if (!validatePersonalField(f, user[f])) ok = false;
-    });
-    addrFields.forEach((f) => {
-      if (!validateAddressField(f, address[f])) ok = false;
-    });
-    return ok;
-  };
+  const personalChecks = await Promise.all(personalFields.map((f) => validatePersonalField(f, user[f])));
+  const addrChecks = await Promise.all(addrFields.map((f) => validateAddressField(f, address[f])));
+
+  return [...personalChecks, ...addrChecks].every(Boolean);
+};
+
 
   // ---------- Save (PUT profile, then create/update address) ----------
   const handleSave = async (e) => {
     e.preventDefault();
     setSuccessMsg("");
     setErrors({});
-    if (!validateAll()) return;
+    if (!(await validateAll())) return;
 
     setSaving(true);
     try {
@@ -442,8 +489,8 @@ function EditProfilePage() {
       }
 
       // Success
-      const infoCode = address.id ? "IA002" : "IA001";
-      const infoMsg = getInfoText(infoCode) || (address.id ? "Address updated successfully." : "Address added successfully.");
+      const infoCode = address.id ? "IA004" : "IA001";
+      const infoMsg = (await getInfoText(infoCode)) || (address.id ? "Address updated successfully." : "Address added successfully.");
       setSuccessMsg(infoMsg);
 
       // short delay then navigate back

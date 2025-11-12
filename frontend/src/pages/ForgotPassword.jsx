@@ -104,23 +104,27 @@ export default function ForgotPassword() {
         { email }
       );
 
-      if (res.status === 200 && res.data.sent) {
-        // ✅ Success message from DB (IFP001 or IF002)
-        const msg =
-          getInfoText("IFP001") ||
-          getInfoText("IF002") ||
-          res.data.detail;
-        setSuccessMsg(msg);
+      if (res.status === 200) {
+  // ✅ Success case — handle any backend format (detail/message/sent)
+  const msg =
+    res.data.message ||
+    res.data.detail ||
+    getInfoText("IFP001") ||
+    "Verification code sent successfully!..";
+  setSuccessMsg(msg);
 
-        setTimeout(() => {
-          navigate("/verify-otp", { state: { email } });
-        }, 1500);
-      } else {
-        const fallback =
-          res.data?.detail ||
-          getErrorText("EF001"); // Email not registered
-        setErrors({ email: fallback });
-      }
+  setTimeout(() => {
+    navigate("/verify-otp", { state: { email } });
+  }, 1500);
+} else {
+  // ❌ Fallback only on non-200
+  const fallback =
+    res.data?.detail ||
+    getErrorText("EF001") ||
+    "Email not registered....";
+  setErrors({ email: fallback });
+}
+
     } catch (err) {
       console.error("❌ Error sending OTP:", err);
       const backendError =

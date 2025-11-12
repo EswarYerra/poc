@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
 
+from apps.accounts.views import message_detail
+
 def home_view(request):
     return JsonResponse({
         "message": "Welcome to Neonflake Backend API!",
@@ -22,4 +24,6 @@ urlpatterns = [
     path("api/password-reset/", include("apps.password_reset.urls")),
     path("api/change-password/", include("apps.change_password.urls")),
     path("api/viewprofile/", include("apps.viewprofile.urls")),
+    path("api/auth/messages/<str:type>/<str:code>/", message_detail, name="message_detail"),
+
 ]

@@ -33,9 +33,9 @@ def get_message_tables(request):
         informations = list(UserInformation.objects.values('information_code', 'information_text'))
 
         data = {
-            "user_error": {e["error_code"]: e["error_message"] for e in errors},
-            "user_validation": {v["validation_code"]: v["validation_message"] for v in validations},
-            "user_information": {i["information_code"]: i["information_text"] for i in informations},
+            "user_error": list(UserError.objects.values("error_code", "error_message")),
+            "user_validation": list(UserValidation.objects.values("validation_code", "validation_message")),
+            "user_information": list(UserInformation.objects.values("information_code", "information_text")),
         }
 
         return Response(data, status=status.HTTP_200_OK)
@@ -331,3 +331,52 @@ def get_messages(request):
         "user_information": user_information,
     })
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def message_detail(request, type, code):
+    """
+    Returns message for given type (error, validation, information) and code.
+    Prefers DB message; falls back to constants.py if DB is missing.
+    """
+    try:
+        type = type.lower().strip()
+        code = code.strip().upper()
+        message = None
+        source = None
+
+        if type == "error":
+            message = (
+                UserError.objects.filter(error_code__iexact=code)
+                .values_list("error_message", flat=True)
+                .first()
+            )
+        elif type == "validation":
+            message = (
+                UserValidation.objects.filter(validation_code__iexact=code)
+                .values_list("validation_message", flat=True)
+                .first()
+            )
+        elif type == "information":
+            message = (
+                UserInformation.objects.filter(information_code__iexact=code)
+                .values_list("information_text", flat=True)
+                .first()
+            )
+
+        if message:
+            source = "DB"
+        else:
+            if type == "error":
+                message = DEFAULT_MESSAGES["ERRORS"].get(code, "")
+            elif type == "validation":
+                message = DEFAULT_MESSAGES["VALIDATIONS"].get(code, "")
+            elif type == "information":
+                message = DEFAULT_MESSAGES["INFORMATION"].get(code, "")
+            source = "CONSTANTS"
+
+        print(f"📢 message_detail → TYPE={type.upper()} CODE={code} SOURCE={source} MESSAGE={message}")
+        return Response({"code": code, "message": message, "source": source}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"❌ message_detail error: {e}")
+        return Response({"message": f"Server error: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

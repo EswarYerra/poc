@@ -4,6 +4,7 @@ from django.db import models
 #from apps.accounts.models import UserError, UserInformation
 
 class User(AbstractUser):
+    email = models.EmailField(unique=True)  # ✅ Make email unique
     phone = models.CharField(max_length=15, unique=False, null=True, blank=True)
 
     ROLE_CHOICES = (
@@ -11,6 +12,12 @@ class User(AbstractUser):
         ('user', 'User'),
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
+
+    def save(self, *args, **kwargs):
+        # ✅ Always store lowercase trimmed emails
+        if self.email:
+            self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username

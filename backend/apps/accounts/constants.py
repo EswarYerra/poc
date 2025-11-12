@@ -54,7 +54,7 @@ DEFAULT_MESSAGES = {
     # 🟢 INFORMATION CODES (Success Messages)
     "INFORMATION": {
         # Change Password
-        "ICP001": "Password changed successfully.",
+        "ICP001": "Password changed successfully????.",
 
         # Address
         "IA001": "Address added successfully.",

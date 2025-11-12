@@ -1,8 +1,28 @@
+// ✅ frontend/src/pages/ChangePassword.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ChangePassword.css";
 import { Eye, EyeOff } from "lucide-react";
+
+// ✅ Fetch fallback message from backend constants if DB missing
+const fetchBackendMessage = async (code, type) => {
+  try {
+    const cached = localStorage.getItem(`${type}_${code}`);
+    if (cached) return cached;
+
+    const res = await fetch(`http://127.0.0.1:8000/api/auth/messages/${type}/${code}/`);
+    if (res.ok) {
+      const data = await res.json();
+      const message = data?.message || "";
+      if (message) localStorage.setItem(`${type}_${code}`, message);
+      return message;
+    }
+  } catch (err) {
+    console.warn("⚠️ Could not fetch backend message:", code, type, err);
+  }
+  return "";
+};
 
 export default function ChangePassword() {
   const [form, setForm] = useState({
@@ -27,7 +47,7 @@ export default function ChangePassword() {
   const navigate = useNavigate();
   const token = localStorage.getItem("access");
 
-  // ✅ Load message tables safely
+  // ✅ Load message tables safely (from cache or backend)
   useEffect(() => {
     const loadTables = async () => {
       try {
@@ -37,31 +57,18 @@ export default function ChangePassword() {
         e = e ? JSON.parse(e) : [];
         i = i ? JSON.parse(i) : [];
 
-        // ensure they are arrays
-        e = Array.isArray(e) ? e : [];
-        i = Array.isArray(i) ? i : [];
-
-        if (e.length && i.length) {
+        if (Array.isArray(e) && Array.isArray(i) && (e.length || i.length)) {
           setTables({ user_error: e, user_information: i });
         } else {
           const res = await fetch("http://127.0.0.1:8000/api/auth/messages/");
           if (res.ok) {
             const data = await res.json();
-
-            const errArray = Array.isArray(data.user_error)
-              ? data.user_error
-              : [];
-            const infoArray = Array.isArray(data.user_information)
-              ? data.user_information
-              : [];
-
             setTables({
-              user_error: errArray,
-              user_information: infoArray,
+              user_error: Array.isArray(data.user_error) ? data.user_error : [],
+              user_information: Array.isArray(data.user_information) ? data.user_information : [],
             });
-
-            localStorage.setItem("user_error", JSON.stringify(errArray));
-            localStorage.setItem("user_information", JSON.stringify(infoArray));
+            localStorage.setItem("user_error", JSON.stringify(data.user_error || []));
+            localStorage.setItem("user_information", JSON.stringify(data.user_information || []));
           }
         }
       } catch (err) {
@@ -73,39 +80,43 @@ export default function ChangePassword() {
     loadTables();
   }, []);
 
-  // ✅ Helper to safely find messages
-  const getErrorText = (code) => {
-  const data = tables.user_error;
+  // ✅ Safe helper with backend fallback
+  const getErrorText = async (code) => {
+    const data = tables.user_error;
+    let msg = "";
 
-  // Handle case where data is array
-  if (Array.isArray(data)) {
-    const found = data.find(
-      (x) =>
-        typeof x === "object" &&
-        (x.error_code || "").toUpperCase() === code.toUpperCase()
-    );
-    return found ? found.error_message : "";
-  }
+    if (Array.isArray(data)) {
+      const found = data.find(
+        (x) =>
+          typeof x === "object" &&
+          (x.error_code || "").toUpperCase() === (code || "").toUpperCase()
+      );
+      msg = found?.error_message || "";
+    } else if (typeof data === "object" && data !== null) {
+      msg = data[code] || data[code.toUpperCase()] || "";
+    }
 
-  // Handle case where data is object (key-value)
-  if (typeof data === "object" && data !== null) {
-    const key = Object.keys(data).find(
-      (k) => k.toUpperCase() === code.toUpperCase()
-    );
-    return key ? data[key] : "";
-  }
+    if (!msg) msg = await fetchBackendMessage(code, "error");
+    return msg;
+  };
 
-  return "";
-};
+  const getInfoText = async (code) => {
+    const data = tables.user_information;
+    let msg = "";
 
-  const getInfoText = (code) => {
-    if (!Array.isArray(tables.user_information)) return "";
-    const i = tables.user_information.find(
-      (x) =>
-        typeof x === "object" &&
-        (x.information_code || "").toUpperCase() === code.toUpperCase()
-    );
-    return i ? i.information_text : "";
+    if (Array.isArray(data)) {
+      const found = data.find(
+        (x) =>
+          typeof x === "object" &&
+          (x.information_code || "").toUpperCase() === (code || "").toUpperCase()
+      );
+      msg = found?.information_text || "";
+    } else if (typeof data === "object" && data !== null) {
+      msg = data[code] || data[code.toUpperCase()] || "";
+    }
+
+    if (!msg) msg = await fetchBackendMessage(code, "information");
+    return msg;
   };
 
   const handleChange = (e) => {
@@ -117,17 +128,18 @@ export default function ChangePassword() {
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
+  // ✅ handle submit with all messages dynamic
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setSuccess("");
 
-    // ✅ EF003: mismatch message from DB
+    // 🔹 Validate confirm password
     if (form.new_password !== form.confirm_password) {
-  const mismatchMsg = getErrorText("EF003") || "New password and confirm password do not match.";
-  setErrors({ confirm_password: mismatchMsg });
-  return;
-}
+      const mismatchMsg = await getErrorText("EF003"); // “Passwords do not match”
+      setErrors({ confirm_password: mismatchMsg });
+      return;
+    }
 
     try {
       const res = await axios.post(
@@ -136,27 +148,37 @@ export default function ChangePassword() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // ✅ success message from DB ICP001
-      const infoMsg =
-        res.data.detail || getInfoText("ICP001") || "Password changed successfully.";
+      // ✅ success message from DB or constants (ICP001)
+      const infoMsg = (await getInfoText("ICP001")) || res.data?.detail;
       setSuccess(infoMsg);
       setTimeout(() => navigate("/profile"), 2000);
     } catch (err) {
       console.error("Password change failed:", err);
-      let errMsg = "";
+
+      let newErrors = {};
 
       if (err.response?.data?.old_password) {
-        errMsg = err.response.data.old_password;
-        setErrors({
-          old_password:
-            errMsg || getErrorText("EC001") || "Wrong old password.",
-        });
+        // old password invalid
+        const msg =
+          err.response.data.old_password ||
+          (await getErrorText("EC001")); // “Invalid old password”
+        newErrors.old_password = msg;
+      } else if (err.response?.data?.new_password) {
+        const msg =
+          err.response.data.new_password ||
+          (await getErrorText("EC002")); // e.g., “Weak password”
+        newErrors.new_password = msg;
       } else if (err.response?.data?.confirm_password) {
-        errMsg = err.response.data.confirm_password;
-        setErrors({ confirm_password: errMsg });
+        const msg =
+          err.response.data.confirm_password ||
+          (await getErrorText("EF003")); // mismatch
+        newErrors.confirm_password = msg;
       } else {
-        setErrors({ general: "Something went wrong." });
+        const msg = await getErrorText("EG001"); // generic fallback “Something went wrong”
+        newErrors.general = msg;
       }
+
+      setErrors(newErrors);
     }
   };
 
@@ -171,41 +193,40 @@ export default function ChangePassword() {
           <div className="alert-box alert-error">{errors.general}</div>
         )}
 
-        {["old_password", "new_password", "confirm_password"].map((field) => (
-          <div key={field} className="input-group">
-            <div className="password-field">
-              <input
-                type={showPassword[field.split("_")[0]] ? "text" : "password"}
-                name={field}
-                placeholder={
-                  field === "old_password"
-                    ? "Current Password"
-                    : field === "new_password"
-                    ? "New Password"
-                    : "Confirm New Password"
-                }
-                value={form[field]}
-                onChange={handleChange}
-                className="change-password-input"
-                required
-              />
-              <button
-                type="button"
-                className="eye-btn"
-                onClick={() => toggleShowPassword(field.split("_")[0])}
-              >
-                {showPassword[field.split("_")[0]] ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
-              </button>
+        {["old_password", "new_password", "confirm_password"].map((field) => {
+          const fieldKey = field.split("_")[0];
+          return (
+            <div key={field} className="input-group">
+              <div className="password-field">
+                <input
+                  type={showPassword[fieldKey] ? "text" : "password"}
+                  name={field}
+                  placeholder={
+                    field === "old_password"
+                      ? "Current Password"
+                      : field === "new_password"
+                      ? "New Password"
+                      : "Confirm New Password"
+                  }
+                  value={form[field]}
+                  onChange={handleChange}
+                  className="change-password-input"
+                  required
+                />
+                <button
+                  type="button"
+                  className="eye-btn"
+                  onClick={() => toggleShowPassword(fieldKey)}
+                >
+                  {showPassword[fieldKey] ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors[field] && (
+                <div className="alert-box alert-error">{errors[field]}</div>
+              )}
             </div>
-            {errors[field] && (
-              <div className="alert-box alert-error">{errors[field]}</div>
-            )}
-          </div>
-        ))}
+          );
+        })}
 
         <button type="submit" className="change-password-button">
           Update Password

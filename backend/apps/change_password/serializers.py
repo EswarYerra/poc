@@ -1,20 +1,39 @@
 from rest_framework import serializers
 from django.contrib.auth import password_validation
-from apps.accounts.models import UserError, UserInformation  # ✅ correct path
-
+from apps.accounts.models import UserError, UserInformation, UserValidation  # ✅ correct path
+from apps.accounts.constants import DEFAULT_MESSAGES as DEFAULTS
 
 def get_message_by_code(model, code, default=""):
     """
-    Utility function to fetch message by code from the database tables.
+    Utility function to fetch message by code from DB; falls back to constants if missing.
     """
     try:
+        code = code.upper().strip()
         if model == UserError:
-            record = model.objects.filter(error_code=code).first()
-            return record.error_message if record else default
+            record = model.objects.filter(error_code__iexact=code).first()
+            msg = record.error_message if record else ""
+        elif model == UserInformation:
+            record = model.objects.filter(information_code__iexact=code).first()
+            msg = record.information_text if record else ""
+        elif model == UserValidation:
+            record = model.objects.filter(validation_code__iexact=code).first()
+            msg = record.validation_message if record else ""
         else:
-            record = model.objects.filter(information_code=code).first()
-            return record.information_text if record else default
-    except Exception:
+            msg = ""
+
+        if msg:
+            print(f"✅ get_message_by_code → {code} from DB: {msg}")
+            return msg
+
+        # ✅ fallback from constants.py
+        from apps.accounts.constants import DEFAULT_MESSAGES
+        defaults = DEFAULT_MESSAGES.get("INFORMATION", {})
+        fallback_msg = defaults.get(code, default)
+        print(f"⚠️ get_message_by_code → {code} using fallback: {fallback_msg}")
+        return fallback_msg or default
+
+    except Exception as e:
+        print(f"❌ get_message_by_code failed for {code}: {e}")
         return default
 
 
@@ -46,8 +65,11 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data["new_password"])
         user.save()
 
-        # Fetch success info message from UserInformation table (ICP001)
+        # Fetch success message (from DB or fallback)
         info_msg = get_message_by_code(
-            UserInformation, "ICP001", "Password changed successfully."
+            UserInformation,
+            "ICP001",
+            "Password changed successfully"
         )
+        print(f"✅ Returning info message for ICP001: {info_msg}")
         return {"detail": info_msg}

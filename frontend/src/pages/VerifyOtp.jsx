@@ -1,3 +1,4 @@
+// ✅ frontend/src/pages/VerifyOtp.jsx
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -17,8 +18,9 @@ export default function VerifyOtp() {
   });
 
   const [tables, setTables] = useState({
-    user_error: null,
-    user_information: null,
+    user_error: {},
+    user_information: {},
+    user_validation: {},
   });
 
   const [errors, setErrors] = useState({});
@@ -27,88 +29,122 @@ export default function VerifyOtp() {
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-  // ✅ Load DB messages (error/info)
+  // Normalize array/object → map { CODE: "Message" }
+  const normalize = (data, type = "error") => {
+    try {
+      if (!data) return {};
+      if (Array.isArray(data)) {
+        const map = {};
+        data.forEach((item) => {
+          if (!item) return;
+          if (type === "error") {
+            const code = (item.error_code || "").toUpperCase();
+            if (code) map[code] = item.error_message || "";
+          } else if (type === "info") {
+            const code = (item.information_code || "").toUpperCase();
+            if (code) map[code] = item.information_text || "";
+          } else if (type === "validation") {
+            const code = (item.validation_code || "").toUpperCase();
+            if (code) map[code] = item.validation_message || "";
+          }
+        });
+        return map;
+      }
+      if (typeof data === "object") {
+        const map = {};
+        Object.entries(data).forEach(([k, v]) => {
+          if (v && typeof v === "object") {
+            map[k.toUpperCase()] =
+              v.error_message || v.information_text || v.validation_message || String(v);
+          } else {
+            map[k.toUpperCase()] = String(v || "");
+          }
+        });
+        return map;
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  };
+
+  // Load messages from cache → DB → constants
   useEffect(() => {
-    const loadTables = async () => {
+    const loadMessages = async () => {
       try {
-        const e = JSON.parse(localStorage.getItem("user_error") || "null");
-        const i = JSON.parse(localStorage.getItem("user_information") || "null");
-        if (e && i) {
-          setTables({ user_error: e, user_information: i });
+        const e = JSON.parse(localStorage.getItem("user_error") || "[]");
+        const i = JSON.parse(localStorage.getItem("user_information") || "[]");
+        const v = JSON.parse(localStorage.getItem("user_validation") || "[]");
+
+        if (e.length || i.length || v.length) {
+          setTables({
+            user_error: normalize(e, "error"),
+            user_information: normalize(i, "info"),
+            user_validation: normalize(v, "validation"),
+          });
           return;
         }
 
         const res = await fetch("http://127.0.0.1:8000/api/auth/messages/");
+        if (!res.ok) throw new Error("messages endpoint failed");
         const data = await res.json();
-        localStorage.setItem("user_error", JSON.stringify(data.user_error || {}));
-        localStorage.setItem("user_information", JSON.stringify(data.user_information || {}));
+
+        localStorage.setItem("user_error", JSON.stringify(data.user_error || []));
+        localStorage.setItem("user_information", JSON.stringify(data.user_information || []));
+        localStorage.setItem("user_validation", JSON.stringify(data.user_validation || []));
+
         setTables({
-          user_error: data.user_error || {},
-          user_information: data.user_information || {},
+          user_error: normalize(data.user_error, "error"),
+          user_information: normalize(data.user_information, "info"),
+          user_validation: normalize(data.user_validation, "validation"),
         });
-      } catch (err) {
-        console.error("❌ Failed to fetch message tables:", err);
+      } catch {
+        const res2 = await fetch("http://127.0.0.1:8000/api/auth/constants/");
+        const data2 = await res2.json();
+        setTables({
+          user_error: normalize(data2.ERRORS, "error"),
+          user_information: normalize(data2.INFORMATION, "info"),
+          user_validation: normalize(data2.VALIDATIONS, "validation"),
+        });
       }
     };
-    loadTables();
+    loadMessages();
   }, []);
 
-  // ✅ Lookup helper
-  const lookupFromTable = (table, code, codeKey, textKey) => {
-    if (!table || !code) return "";
-    try {
-      if (Array.isArray(table)) {
-        const entry = table.find(
-          (x) => (x[codeKey] || "").toUpperCase() === code.toUpperCase()
-        );
-        return entry ? entry[textKey] : "";
-      } else if (typeof table === "object") {
-        return table[code] || table[code.toUpperCase()] || "";
-      }
-    } catch (err) {
-      console.warn("Lookup error:", err);
-    }
-    return "";
-  };
-
   const getErrorText = (code) =>
-    lookupFromTable(tables.user_error, code, "error_code", "error_message");
-
+    tables.user_error[(code || "").toUpperCase()] || "";
   const getInfoText = (code) =>
-    lookupFromTable(tables.user_information, code, "information_code", "information_text");
+    tables.user_information[(code || "").toUpperCase()] || "";
 
-  // ✅ Field handlers
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const validateOtp = (value) => {
     const otpRegex = /^[0-9]{6}$/;
     if (!otpRegex.test(value)) {
-      setErrors((prev) => ({ ...prev, otp: getErrorText("EF002") }));
+      setErrors({ otp: getErrorText("EF002") });
       return false;
     }
-    setErrors((prev) => ({ ...prev, otp: "" }));
+    setErrors({ otp: "" });
     return true;
   };
 
   const validatePasswords = () => {
     if (form.new_password !== form.confirm_password) {
-      setErrors((prev) => ({ ...prev, confirm_password: getErrorText("EF003") }));
+      setErrors({ confirm_password: getErrorText("EF003") });
       return false;
     }
-    setErrors((prev) => ({ ...prev, confirm_password: "" }));
+    setErrors({ confirm_password: "" });
     return true;
   };
 
   const handleOtpBlur = (e) => validateOtp(e.target.value);
 
-  // ✅ Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setErrors({});
-    const otpValid = validateOtp(form.otp);
-    const pwdValid = validatePasswords();
-    if (!otpValid || !pwdValid) return;
+    if (!validateOtp(form.otp) || !validatePasswords()) return;
 
     setLoading(true);
     try {
@@ -117,48 +153,24 @@ export default function VerifyOtp() {
         form
       );
 
-      const detail = res.data?.detail?.toLowerCase?.() || "";
-
-      // 🔸 Handle backend error response text
-      if (detail.includes("failed to update password")) {
-        setErrors({ general: getErrorText("EF006") });
-        setLoading(false);
-        return;
-      }
-
-      // 🔸 Show success only on actual success
+      const data = res.data || {};
       if (res.status === 200) {
-        const successMessage =
-          getInfoText("IFP002") || res.data?.detail || "[MISSING: IF003]";
-        setMessage(successMessage);
-
-        // Redirect after short delay
+        const infoCode = data.code || "IF003";
+        setMessage(getInfoText(infoCode));
         setTimeout(() => navigate("/login"), 2000);
       } else {
-        setErrors({ general: getErrorText("EA010") });
+        const errCode = data.code || "EA010";
+        setErrors({ general: getErrorText(errCode) });
       }
     } catch (err) {
       const data = err.response?.data || {};
-      const detail = data.detail?.toLowerCase?.() || "";
-
-      // 🔸 Match known backend error phrases to constants
-      if (detail.includes("invalid verification code")) {
-        setErrors({ otp: getErrorText("EF005") });
-      } else if (detail.includes("session ended")) {
-        setErrors({ otp: getErrorText("EF004") });
-      } else if (detail.includes("email not registered")) {
-        setErrors({ general: getErrorText("EF001") });
-      } else if (detail.includes("failed to update password")) {
-        setErrors({ general: getErrorText("EF006") });
-      } else {
-        setErrors({ general: getErrorText("EA010") });
-      }
+      const errCode = data.code || "EA010";
+      setErrors({ general: getErrorText(errCode) });
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Render
   return (
     <div className="verify-container">
       <div className="verify-card">
@@ -166,7 +178,6 @@ export default function VerifyOtp() {
         <p className="verify-subtext">{getInfoText("IF004")}</p>
 
         <form onSubmit={handleSubmit}>
-          {/* Email */}
           <div className="form-group">
             <label>Email</label>
             <input
@@ -178,7 +189,6 @@ export default function VerifyOtp() {
             />
           </div>
 
-          {/* OTP */}
           <div className="form-group">
             <label>Verification Code</label>
             <input
@@ -194,7 +204,6 @@ export default function VerifyOtp() {
             {errors.otp && <p className="error-msg">{errors.otp}</p>}
           </div>
 
-          {/* New Password */}
           <div className="form-group password-field">
             <label>New Password</label>
             <div className="password-wrapper">
@@ -203,7 +212,7 @@ export default function VerifyOtp() {
                 name="new_password"
                 value={form.new_password}
                 onChange={handleChange}
-                placeholder={getInfoText("IFP001")}
+                placeholder="Enter new password"
                 required
               />
               <span
@@ -215,7 +224,6 @@ export default function VerifyOtp() {
             </div>
           </div>
 
-          {/* Confirm Password */}
           <div className="form-group password-field">
             <label>Confirm Password</label>
             <div className="password-wrapper">
@@ -224,7 +232,7 @@ export default function VerifyOtp() {
                 name="confirm_password"
                 value={form.confirm_password}
                 onChange={handleChange}
-                placeholder={getInfoText("IFP002")}
+                placeholder="Enter your password again"
                 required
               />
               <span
@@ -239,7 +247,6 @@ export default function VerifyOtp() {
             )}
           </div>
 
-          {/* General + Success messages */}
           {errors.general && <p className="error-msg">{errors.general}</p>}
           {message && <p className="success-msg">{message}</p>}
 
