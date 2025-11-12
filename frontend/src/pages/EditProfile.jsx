@@ -418,11 +418,25 @@ const lookupPostalCode = (postalCodeValue, countryValue) => {
         const newErrs = {};
         // backend might return: { username: ["..."], email: ["..."] } or {detail: "..."} or code keys
         if (data.username) {
-          newErrs.username = Array.isArray(data.username) ? String(data.username[0]) : String(data.username);
-        }
-        if (data.email) {
-          newErrs.email = Array.isArray(data.email) ? String(data.email[0]) : String(data.email);
-        }
+  const msg = Array.isArray(data.username)
+    ? String(data.username[0])
+    : String(data.username);
+  if (msg.includes("EP016")) {
+    newErrs.username = getErrorText("EP016");
+  } else {
+    newErrs.username = msg;
+  }
+}
+if (data.email) {
+  const msg = Array.isArray(data.email)
+    ? String(data.email[0])
+    : String(data.email);
+  if (msg.includes("ES003")) {
+    newErrs.email = getErrorText("ES003");
+  } else {
+    newErrs.email = msg;
+  }
+}
         // if backend returned a code key or custom code string, map EP016/ES003 -> friendly text
         // Sometimes backend returns { code: "EP016" } or { detail: "EP016" } or string code inside.
         if (typeof data === "string" && (data.includes("EP016") || data.includes("ES003"))) {

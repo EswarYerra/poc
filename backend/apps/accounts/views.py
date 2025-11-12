@@ -48,37 +48,39 @@ def get_message_tables(request):
 
 
 # ✅ User Registration
+# backend/apps/accounts/views.py
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    username = request.data.get('username')
-    email = request.data.get('email')
-    phone = request.data.get('phone')
-    password = request.data.get('password')
+    username = request.data.get('username', '').strip()
+    email = request.data.get('email', '').strip().lower()
+    phone = request.data.get('phone', '').strip()
+    password = request.data.get('password', '')
 
-    # Required field validation
+    # ✅ Required fields
     if not username or not email or not phone or not password:
         msg = get_message("EV001")
-        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"code": msg["code"], "message": msg["message"]}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Duplicate username check
+    # ✅ Duplicate username
     if User.objects.filter(username__iexact=username).exists():
-        msg = get_message("EV002")
-        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        msg = get_message("EP016")
+        return Response({"code": msg["code"], "message": msg["message"]}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Duplicate email check (return ES003 if already registered)
+    # ✅ Duplicate email
     if User.objects.filter(email__iexact=email).exists():
         msg = get_message("ES003")
-        return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"code": msg["code"], "message": msg["message"]}, status=status.HTTP_400_BAD_REQUEST)
 
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         msg = get_message("IR001")
-        return Response(msg, status=status.HTTP_201_CREATED)
+        return Response({"code": msg["code"], "message": msg["message"]}, status=status.HTTP_201_CREATED)
 
+    # ✅ Show detailed serializer errors (e.g. password too weak)
+    print("❌ Registration serializer errors:", serializer.errors)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # ✅ Profile View / Update
 class ProfileAPIView(APIView):
@@ -380,3 +382,36 @@ def message_detail(request, type, code):
     except Exception as e:
         print(f"❌ message_detail error: {e}")
         return Response({"message": f"Server error: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+
+# backend/apps/accounts/views.py
+
+class MessageTablesAPIView(APIView):
+    def get(self, request):
+        errors = list(UserError.objects.values("error_code", "error_message"))
+        validations = list(UserValidation.objects.values("validation_code", "validation_message"))
+        infos = list(UserInformation.objects.values("information_code", "information_text"))
+
+        # if DB empty, fallback to constants
+        if not errors:
+            errors = [
+                {"error_code": k, "error_message": v}
+                for k, v in DEFAULT_MESSAGES["ERRORS"].items()
+            ]
+        if not validations:
+            validations = [
+                {"validation_code": k, "validation_message": v}
+                for k, v in DEFAULT_MESSAGES["VALIDATIONS"].items()
+            ]
+        if not infos:
+            infos = [
+                {"information_code": k, "information_text": v}
+                for k, v in DEFAULT_MESSAGES["INFORMATION"].items()
+            ]
+
+        return Response({
+            "user_error": errors,
+            "user_validation": validations,
+            "user_information": infos,
+        })

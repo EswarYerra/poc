@@ -148,13 +148,13 @@ function EditUserPage() {
     const v = String(val || "").trim();
     if (!v) msg = await getValidationText("VA002");
     else if ((name === "first_name" || name === "last_name") && !NAME_RE.test(v))
-      msg = await getValidationText("VA001");
+      msg = await getErrorText("EP001");
     else if (name === "username" && !USERNAME_RE.test(v))
       msg = await getValidationText("VA003");
     else if (name === "email" && !EMAIL_RE.test(v))
       msg = await getValidationText("VA005");
     else if (name === "phone" && !PHONE_RE.test(v))
-      msg = await getValidationText("VA007");
+      msg = await getValidationText("VP009");
 
     setErrors((p) => ({ ...p, [name]: msg }));
     return !msg;

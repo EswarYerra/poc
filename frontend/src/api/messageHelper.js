@@ -1,32 +1,58 @@
-// ✅ messageHelper.js — universal message retriever
+// ✅ frontend/src/api/messageHelper.js — universal message retriever
 
 export const getMessageByCode = (code) => {
   if (!code) return "";
 
-  // Read from localStorage (already JSON stringified)
-  const user_error = JSON.parse(localStorage.getItem("user_error")) || {};
-  const user_validation = JSON.parse(localStorage.getItem("user_validation")) || {};
-  const user_information = JSON.parse(localStorage.getItem("user_information")) || {};
+  const safeParse = (key) => {
+    try {
+      return JSON.parse(localStorage.getItem(key)) || [];
+    } catch {
+      return [];
+    }
+  };
 
-  // ✅ New backend format is dictionary (not array)
+  const errors = safeParse("user_error");
+  const validations = safeParse("user_validation");
+  const infos = safeParse("user_information");
+
+  // ✅ Normalize: if backend gave dictionary form, convert to array-like access
+  const findMsg = (list, keyName, valName) => {
+    if (!Array.isArray(list)) {
+      // if it's already a dict, use direct lookup
+      return list?.[code] || "";
+    }
+    const found = list.find(
+      (item) =>
+        item[keyName]?.toUpperCase?.() === code.toUpperCase()
+    );
+    return found ? found[valName] : "";
+  };
+
   if (code.startsWith("E")) {
-    return user_error[code] || ""; // directly access by key
+    return findMsg(errors, "error_code", "error_message") || "";
   }
   if (code.startsWith("V") || code.startsWith("VP")) {
-    return user_validation[code] || "";
+    return findMsg(validations, "validation_code", "validation_message") || "";
   }
   if (code.startsWith("I")) {
-    return user_information[code] || "";
+    return findMsg(infos, "information_code", "information_text") || "";
   }
   return "";
 };
 
-// Optional helper: log all available messages (for debugging)
+// ✅ Optional: view everything in localStorage
 export const showAllMessages = () => {
+  const parse = (key) => {
+    try {
+      return JSON.parse(localStorage.getItem(key));
+    } catch {
+      return null;
+    }
+  };
   const all = {
-    user_error: JSON.parse(localStorage.getItem("user_error")),
-    user_validation: JSON.parse(localStorage.getItem("user_validation")),
-    user_information: JSON.parse(localStorage.getItem("user_information")),
+    user_error: parse("user_error"),
+    user_validation: parse("user_validation"),
+    user_information: parse("user_information"),
   };
   console.log("📦 Cached message tables:", all);
   return all;

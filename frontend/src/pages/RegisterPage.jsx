@@ -20,208 +20,252 @@ export default function RegisterForm() {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [checking, setChecking] = useState({ username: false, email: false });
 
-  // ✅ Check if DB message tables are in cache
-  const hasStoredMessages = () => {
-    try {
-      const ue = localStorage.getItem("user_error");
-      return ue && Object.keys(JSON.parse(ue)).length > 0;
-    } catch {
-      return false;
-    }
-  };
-
-  // ✅ Load from DB (or constants fallback)
+  // Load messages once (attempt; not required to succeed)
   useEffect(() => {
-    const fetchMessages = async () => {
+    (async () => {
       try {
         const res = await fetch("http://127.0.0.1:8000/api/auth/messages/");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) return;
         const data = await res.json();
-
         localStorage.setItem("user_error", JSON.stringify(data.user_error || []));
         localStorage.setItem("user_information", JSON.stringify(data.user_information || []));
         localStorage.setItem("user_validation", JSON.stringify(data.user_validation || []));
-        console.log("✅ Messages loaded successfully from backend");
-      } catch (err) {
-        console.error("❌ Failed to fetch messages:", err);
+      } catch (e) {
+        // silent
       }
-    };
-
-    if (!hasStoredMessages()) fetchMessages();
+    })();
   }, []);
 
-  // ✅ Error setter
-  const setFieldError = (field, message) => {
+  // helper: set single field error
+  const setFieldError = (field, msg) =>
     setErrors((prev) => {
-      const newErr = { ...prev };
-      if (!message) delete newErr[field];
-      else newErr[field] = message;
-      return newErr;
+      const copy = { ...prev };
+      if (!msg) delete copy[field];
+      else copy[field] = msg;
+      return copy;
     });
-  };
 
-  // ✅ Validation using your constants.py codes
-  const validateFieldClient = (name, value) => {
-    const v = value?.trim() || "";
+  // Validation mapping to codes (returns resolved string or empty string)
+  const validateField = (name, value) => {
+    const v = (value || "").trim();
+    if (!v) return getMessageByCode("VA002"); // generic "Field cannot be empty"
 
-    if (!v) {
-      switch (name) {
-        case "firstName":
-        case "lastName":
-          return getMessageByCode("VA002"); // Field cannot be empty
-        case "username":
-          return getMessageByCode("VA002"); // Required
-        case "email":
-          return getMessageByCode("VA002");
-        case "phone":
-          return getMessageByCode("VA002");
-        case "password":
-          return getMessageByCode("VA002");
-        default:
-          return getMessageByCode("VA002");
-      }
+    // Name (special char -> EP001 requested)
+    if (name === "firstName" || name === "lastName") {
+      if (!/^[A-Za-z\s]+$/.test(v)) return getMessageByCode("EP001"); // special char error code
+      if (v.length > 50) return getMessageByCode("VA003");
+      return "";
     }
 
-    if (["firstName", "lastName"].includes(name)) {
-      if (!/^[A-Za-z\s]+$/.test(v)) return getMessageByCode("VA001"); // Only alphabets
-      if (v.length > 50) return getMessageByCode("VA003"); // Max 50 chars
+    if (name === "username") {
+      if (!/^[A-Za-z0-9_]+$/.test(v)) return getMessageByCode("VA008");
+      if (v.length < 3 || v.length > 20) return getMessageByCode("VA009");
+      return "";
     }
 
-    if (name === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))
-      return getMessageByCode("VA005"); // Invalid email
+    if (name === "email") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return getMessageByCode("VA005");
+      return "";
+    }
 
     if (name === "phone") {
-      if (!/^[0-9]+$/.test(v)) return getMessageByCode("VA006"); // Must be numeric
-      if (v.length !== 10) return getMessageByCode("VA007"); // 10 digits
+      if (!/^[0-9]+$/.test(v)) return getMessageByCode("VA006"); // numeric required
+      if (v.length !== 10) return getMessageByCode("VP009"); // phone length code per request
+      return "";
     }
 
-    if (name === "password" && v.length < 6)
-      return getMessageByCode("EA004"); // This field is required or weak password msg
+    if (name === "password") {
+      if (v.length < 6) return getMessageByCode("EA004");
+      return "";
+    }
 
     return "";
   };
 
-  // ✅ Async username/email existence checks
-  const handleBlur = async (e) => {
-    const { name, value } = e.target;
-    const clientErr = validateFieldClient(name, value);
-    setFieldError(name, clientErr);
+  // run validation for one field and optionally do server checks (username/email)
+  const runValidationForField = async (name, value) => {
+    const clientMsg = validateField(name, value);
+    setFieldError(name, clientMsg);
 
-    if (!clientErr && value.trim()) {
+    if (clientMsg) return; // stop if client validation fails
+
+    // server-side existence checks on blur
+    if (name === "username") {
       try {
-        if (name === "username") {
-          const res = await fetch(
-            `http://127.0.0.1:8000/api/auth/check-username/?username=${encodeURIComponent(value.trim())}`
-          );
-          if (res.ok) {
-            const json = await res.json();
-            if (json.exists)
-              setFieldError("username", getMessageByCode("EP016")); // Username exists
-          }
+        setChecking((c) => ({ ...c, username: true }));
+        const res = await fetch(
+          `http://127.0.0.1:8000/api/auth/check-username/?username=${encodeURIComponent(value.trim())}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.exists) setFieldError("username", getMessageByCode("EP016"));
         }
+      } catch (e) {
+        // ignore network check failures (don't block user)
+      } finally {
+        setChecking((c) => ({ ...c, username: false }));
+      }
+    }
 
-        if (name === "email") {
-          const res = await fetch(
-            `http://127.0.0.1:8000/api/auth/check-email/?email=${encodeURIComponent(value.trim())}`
-          );
-          if (res.ok) {
-            const json = await res.json();
-            if (json.exists)
-              setFieldError("email", getMessageByCode("ES003")); // Email exists
-          }
+    if (name === "email") {
+      try {
+        setChecking((c) => ({ ...c, email: true }));
+        const res = await fetch(
+          `http://127.0.0.1:8000/api/auth/check-email/?email=${encodeURIComponent(value.trim())}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.exists) setFieldError("email", getMessageByCode("ES003"));
         }
-      } catch (err) {
-        console.warn("⚠️ Validation API error:", err);
+      } catch (e) {
+        // ignore
+      } finally {
+        setChecking((c) => ({ ...c, email: false }));
       }
     }
   };
 
-  const handleKeyDown = (e) => {
+  // Handler: blur triggers validation + server checks
+  const handleBlur = async (e) => {
+    const { name, value } = e.target;
+    await runValidationForField(name, value);
+  };
+
+  // When pressing Enter while in an input: blur it & run validation (but do not submit)
+  const handleKeyDown = async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      e.target.blur();
+      const el = e.target;
+      if (el && el.blur) el.blur(); // will call onBlur which runs validation
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((p) => ({ ...p, [name]: value }));
     setFieldError(name, "");
     setFieldError("general", "");
+    setSuccess("");
   };
 
-  const parseBackendErrors = async (response) => {
+  // Validate all fields before submitting; returns boolean
+  const validateAll = async () => {
+    const fields = ["firstName", "lastName", "username", "email", "phone", "password"];
+    const newErrs = {};
+    let ok = true;
+
+    // client validations first
+    for (const f of fields) {
+      const msg = validateField(f, formData[f]);
+      if (msg) {
+        newErrs[f] = msg;
+        ok = false;
+      }
+    }
+
+    setErrors((prev) => ({ ...prev, ...newErrs }));
+    if (!ok) return false;
+
+    // then check username/email existence with server
     try {
-      const data = await response.json();
-      if (data && data.message) return { general: data.message };
-      if (data && typeof data === "object") {
-        const out = {};
-        Object.keys(data).forEach((k) => {
-          const v = data[k];
-          out[k] = Array.isArray(v) ? v[0] : String(v);
-        });
-        return out;
+      const u = formData.username.trim();
+      const e = formData.email.trim();
+
+      if (u) {
+        const resU = await fetch(`http://127.0.0.1:8000/api/auth/check-username/?username=${encodeURIComponent(u)}`);
+        if (resU.ok) {
+          const data = await resU.json();
+          if (data.exists) {
+            setFieldError("username", getMessageByCode("EP016"));
+            ok = false;
+          }
+        }
+      }
+
+      if (e) {
+        const resE = await fetch(`http://127.0.0.1:8000/api/auth/check-email/?email=${encodeURIComponent(e)}`);
+        if (resE.ok) {
+          const data = await resE.json();
+          if (data.exists) {
+            setFieldError("email", getMessageByCode("ES003"));
+            ok = false;
+          }
+        }
       }
     } catch {
-      /* ignore */
+      // server checks failing should not block submission (optional)
     }
-    return { general: getMessageByCode("EA004") };
+
+    return ok;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Submit
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
     setSuccess("");
     setFieldError("general", "");
 
-    const fields = ["firstName", "lastName", "username", "email", "phone", "password"];
-    const newErrors = {};
-    let hasError = false;
-
-    fields.forEach((f) => {
-      const err = validateFieldClient(f, formData[f]);
-      if (err) {
-        newErrors[f] = err;
-        hasError = true;
-      }
-    });
-
-    if (hasError) {
-      setErrors(newErrors);
+    const ok = await validateAll();
+    if (!ok) {
       setFieldError("general", getMessageByCode("VA002"));
       return;
     }
 
     const payload = {
-      username: formData.username,
-      email: formData.email,
-      phone: formData.phone,
-      first_name: formData.firstName,
-      last_name: formData.lastName,
+      username: formData.username.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      first_name: formData.firstName.trim(),
+      last_name: formData.lastName.trim(),
       password: formData.password,
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/auth/register/", {
+      const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        setSuccess(getMessageByCode("IR001")); // Account created successfully
-        localStorage.removeItem("access");
-        localStorage.removeItem("refresh");
-        localStorage.removeItem("user");
-        setTimeout(() => navigate("/login", { replace: true }), 1200);
+      if (res.ok) {
+        // success message from DB code IP001 as requested
+        setSuccess(getMessageByCode("IP001"));
+        // clear sensitive fields
+        setFormData((p) => ({ ...p, password: "" }));
+        setTimeout(() => navigate("/login"), 1200);
         return;
       }
 
-      const be = await parseBackendErrors(response);
-      setErrors(be);
+      // parse backend errors (map codes inside messages back to friendly text)
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+
+      // If backend returned field-level errors, map them to UI
+      if (data && typeof data === "object") {
+        const mapped = {};
+        Object.entries(data).forEach(([k, v]) => {
+          const str = Array.isArray(v) ? String(v[0]) : String(v);
+          // try to detect code inside value and resolve
+          const codeMatch = (str || "").match(/\b([A-Z]{1,3}\d{3})\b/);
+          if (codeMatch && codeMatch[1]) {
+            mapped[k] = getMessageByCode(codeMatch[1]) || str;
+          } else {
+            mapped[k] = str;
+          }
+        });
+        setErrors((p) => ({ ...p, ...mapped }));
+      } else {
+        setFieldError("general", getMessageByCode("EA004"));
+      }
     } catch (err) {
-      console.error("Registration failed:", err);
-      setFieldError("general", getMessageByCode("EA004")); // Fallback from constants
+      console.error("Registration network error:", err);
+      setFieldError("general", getMessageByCode("EA004"));
     }
   };
 
@@ -230,6 +274,10 @@ export default function RegisterForm() {
       <div className="register-container">
         <div className="register-card">
           <h2>Create Account</h2>
+
+          {/* success shown above form as requested */}
+          {success && <p className="success" style={{ marginBottom: 12 }}>{success}</p>}
+
           <p className="subtitle">Join us by filling out the details below</p>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -261,7 +309,11 @@ export default function RegisterForm() {
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
             />
-            {errors.username && <p className="error">{errors.username}</p>}
+            {checking.username ? (
+              <p style={{ fontSize: 12, color: "#666" }}>Checking username...</p>
+            ) : (
+              errors.username && <p className="error">{errors.username}</p>
+            )}
 
             <input
               name="email"
@@ -272,7 +324,11 @@ export default function RegisterForm() {
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
             />
-            {errors.email && <p className="error">{errors.email}</p>}
+            {checking.email ? (
+              <p style={{ fontSize: 12, color: "#666" }}>Checking email...</p>
+            ) : (
+              errors.email && <p className="error">{errors.email}</p>
+            )}
 
             <input
               name="phone"
@@ -285,7 +341,7 @@ export default function RegisterForm() {
             />
             {errors.phone && <p className="error">{errors.phone}</p>}
 
-            <div className="password-wrapper">
+            <div className="password-wrapper" style={{ position: "relative" }}>
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
@@ -295,21 +351,24 @@ export default function RegisterForm() {
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
               />
-              <span className="password-toggle" onClick={() => setShowPassword((s) => !s)}>
+              <span
+                className="password-toggle"
+                onClick={() => setShowPassword((s) => !s)}
+                style={{ position: "absolute", right: 10, top: 8, cursor: "pointer" }}
+              >
                 {showPassword ? <FiEyeOff /> : <FiEye />}
               </span>
             </div>
             {errors.password && <p className="error">{errors.password}</p>}
 
             {errors.general && <p className="error">{errors.general}</p>}
-            {success && <p className="success">{success}</p>}
 
             <button type="submit">Create Account</button>
           </form>
 
           <p className="redirect">
-            Already have an account?
-            <Link to="/login" className="login-link"> Login here </Link>
+            Already have an account?{" "}
+            <Link to="/login" className="login-link">Login here</Link>
           </p>
         </div>
       </div>
